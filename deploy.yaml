@@ -1,0 +1,8 @@
+---
+- name: Deploy Docker image to Kubernetes
+  hosts: k8s_nodes
+  become: yes
+  tasks:
+    - name: Deploy Docker image to Kubernetes
+      command: kubectl apply -f abc_deployment.yaml
+

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: abc-app
+  labels:
+    app: abc-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: abc-app
+  template:
+    metadata:
+      labels:
+        app: abc-app
+    spec:
+      containers:
+      - name: abc-app-container
+        image: agirap/abc_tech:14
+        ports:
+        - containerPort: 80
+
