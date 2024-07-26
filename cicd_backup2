@@ -42,7 +42,6 @@ pipeline
 			        sh 'cp /opt/jenkins/workspace/$JOB_NAME/target/ABCtechnologies-1.0.war /opt/jenkins/workspace/$JOB_NAME/ABCtechnologies-1.0.war'
                                 sh 'docker build -t abc_tech:$BUILD_NUMBER .'
 				sh 'docker tag abc_tech:$BUILD_NUMBER agirap/abc_tech:$BUILD_NUMBER'
-				sh 'docker tag abc_tech:$BUILD_NUMBER agirap/abc_tech:latest'
 			}
 		}
 
@@ -53,7 +52,6 @@ pipeline
 			    withDockerRegistry([ credentialsId: "dockerhub", url: "" ])
 			    {
 			       sh 'docker push agirap/abc_tech:$BUILD_NUMBER'
-			       sh 'docker push agirap/abc_tech:$latest'
 			    }
 			}
 		}
@@ -62,7 +60,7 @@ pipeline
 		{
 			steps
 			{
-				sh 'docker run -itd -P agirap/abc_tech:latest'
+				sh 'docker run -itd -P agirap/abc_tech:$BUILD_NUMBER'
 			}
 		}
 

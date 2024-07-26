@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'agirap/abc_tech:latest'
+        KUBECONFIG = credentials('kubeconfig-id')  // Kubernetes config file stored in Jenkins credentials
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your code from your version control system
+                git 'https://github.com/agirap/igp.git'
+            }
+        }
+ 
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    withCredentials([
+                        file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG'),
+                        file(credentialsId: 'ansible-vault-password-id', variable: 'ANSIBLE_VAULT_PASSWORD_FILE')
+                    ]) {
+                        // Run Ansible playbook to deploy the image to Kubernetes
+                        sh '''
+                        ansible-playbook -i inventory/hosts deploy.yml --vault-password-file $ANSIBLE_VAULT_PASSWORD_FILE
+                        '''
+                    }
+                }
+            }
+/*       
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    withCredentials([file(credentialsId: 'your-ansible-vault-password-id', variable: 'ANSIBLE_VAULT_PASSWORD_FILE')]) {
+                        // Run Ansible playbook to deploy the image to Kubernetes
+                        sh '''
+                        ansible-playbook -i inventory/hosts deploy.yaml --vault-password-file $ANSIBLE_VAULT_PASSWORD_FILE
+                        '''
+                    }
+                }
+            }
+*/
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

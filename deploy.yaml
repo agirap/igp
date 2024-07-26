@@ -3,6 +3,22 @@
   hosts: k8s_nodes
   become: yes
   tasks:
+    - name: Copy abc_deployment.yaml to nodes
+      copy:
+        src: abc_deployment.yaml
+        dest: abc_deployment.yaml
+
+    - name: Copy abc_service.yaml to nodes
+      copy:
+        src: abc_service.yaml
+        dest: abc_service.yaml
+
+    - name: Set KUBECONFIG environment variable
+      shell: echo "export KUBECONFIG=/home/ubuntu/.kube/config" >> /home/ubuntu/.bashrc
+
     - name: Deploy Docker image to Kubernetes
-      command: kubectl apply -f abc_deployment.yaml
+      command: kubectl apply -f abc_deployment.yaml --kubeconfig /home/ubuntu/.kube/config --validate=false
+
+    - name: Expose the service on Kubernetes
+      command: kubectl apply -f abc_service.yaml --kubeconfig /home/ubuntu/.kube/config --validate=false
 
