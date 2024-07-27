@@ -1,6 +1,13 @@
 pipeline
 {
 	agent any
+
+    environment {
+        DOCKER_IMAGE = 'agirap/abc_tech:latest'
+        KUBECONFIG = credentials('kubeconfig-id')  // Kubernetes config file stored in Jenkins credentials
+    }
+
+
 	stages
 	{
 		stage('Code Checkout')
@@ -42,7 +49,7 @@ pipeline
 			        sh 'cp /opt/jenkins/workspace/$JOB_NAME/target/ABCtechnologies-1.0.war /opt/jenkins/workspace/$JOB_NAME/ABCtechnologies-1.0.war'
                                 sh 'docker build -t abc_tech:$BUILD_NUMBER .'
 				sh 'docker tag abc_tech:$BUILD_NUMBER agirap/abc_tech:$BUILD_NUMBER'
-				sh 'docker tag abc_tech:$BUILD_NUMBER agirap/abc_tech:latest'
+				sh 'docker tag abc_tech:$BUILD_NUMBER $DOCKER_IMAGE'
 			}
 		}
 
@@ -53,19 +60,48 @@ pipeline
 			    withDockerRegistry([ credentialsId: "dockerhub", url: "" ])
 			    {
 			       sh 'docker push agirap/abc_tech:$BUILD_NUMBER'
-			       sh 'docker push agirap/abc_tech:$latest'
+			       sh 'docker push $DOCKER_IMAGE'
 			    }
 			}
 		}
-
+/*
 		stage('Deploy as container')
 		{
 			steps
 			{
-				sh 'docker run -itd -P agirap/abc_tech:latest'
+				sh 'docker run -itd -P $DOCKER_IMAGE'
 			}
 		}
 
+*/
+        stage('Deploy to Kubernetes Cluster') {
+            steps {
+                script {
+                    withCredentials([
+                        file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG'),
+                        file(credentialsId: 'ansible-vault-password-id', variable: 'ANSIBLE_VAULT_PASSWORD_FILE'),
+                        sshUserPrivateKey(credentialsId: 'ssh-id', keyFileVariable: 'SSH_KEY')
+                    ]) {
+                        // Run Ansible playbook to deploy the image to Kubernetes
+                        sh '''
+                        # Ensure the SSH key has the right permissions
+                        chmod 600 $SSH_KEY
+
+                        # Run the Ansible playbook with the SSH key
+                        ansible-playbook -i inventory/hosts deploy.yaml --private-key $SSH_KEY
+                        '''
+                    }
+                }
+            }
+        }
 
    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+
+    
 }

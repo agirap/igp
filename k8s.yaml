@@ -13,40 +13,49 @@ pipeline {
                 git 'https://github.com/agirap/igp.git'
             }
         }
- 
+ /*
+        stage('Prepare') {
+            steps {
+                script {
+                    // Ensure known_hosts file exists and has the correct permissions
+                    sh 'mkdir -p ~/.ssh'
+                    sh 'touch ~/.ssh/known_hosts'
+                    sh 'chmod 600 ~/.ssh/known_hosts'
+                    
+                    // Add the remote hosts to the known_hosts file
+                    sh 'ssh-keyscan -H 172.31.25.233 >> ~/.ssh/known_hosts'
+                    sh 'ssh-keyscan -H 172.31.27.82 >> ~/.ssh/known_hosts'
+                }
+            }
+        }
+*/
         stage('Deploy to Kubernetes') {
             steps {
                 script {
                     withCredentials([
                         file(credentialsId: 'kubeconfig-id', variable: 'KUBECONFIG'),
-                        file(credentialsId: 'ansible-vault-password-id', variable: 'ANSIBLE_VAULT_PASSWORD_FILE')
+                        file(credentialsId: 'ansible-vault-password-id', variable: 'ANSIBLE_VAULT_PASSWORD_FILE'),
+                        sshUserPrivateKey(credentialsId: 'ssh-id', keyFileVariable: 'SSH_KEY')
                     ]) {
                         // Run Ansible playbook to deploy the image to Kubernetes
                         sh '''
-                        ansible-playbook -i inventory/hosts deploy.yml --vault-password-file $ANSIBLE_VAULT_PASSWORD_FILE
+                        # Ensure the SSH key has the right permissions
+                        chmod 600 $SSH_KEY
+
+                        # Run the Ansible playbook with the SSH key
+                        ansible-playbook -i inventory/hosts deploy.yaml --private-key $SSH_KEY
                         '''
                     }
                 }
             }
-/*       
-        stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    withCredentials([file(credentialsId: 'your-ansible-vault-password-id', variable: 'ANSIBLE_VAULT_PASSWORD_FILE')]) {
-                        // Run Ansible playbook to deploy the image to Kubernetes
-                        sh '''
-                        ansible-playbook -i inventory/hosts deploy.yaml --vault-password-file $ANSIBLE_VAULT_PASSWORD_FILE
-                        '''
-                    }
-                }
-            }
-*/
         }
     }
+
     
     post {
         always {
             cleanWs()
         }
     }
+
 }
