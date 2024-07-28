@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-prometheus-server
+spec:
+  capacity:
+    storage: 1Gi  # Adjust size as needed
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: "/mnt/data/prometheus-server"  # Adjust path as needed
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-storage-prometheus-alertmanager-0
+spec:
+  capacity:
+    storage: 1Gi  # Adjust size as needed
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: "/mnt/data/alertmanager"  # Adjust path as needed
+
